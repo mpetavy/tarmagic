@@ -16,6 +16,8 @@ import (
 	"github.com/mpetavy/common"
 )
 
+// tarmagic -f s:\Temp\Marcel\jdk-hotspot-11.0.4_11-mac.tar.gz -d d:\temp\jdk-hotspot-11.0.4_11-mac.tar.gz -o jdk-11.0.4+11
+
 var (
 	filename    *string
 	destination *string
