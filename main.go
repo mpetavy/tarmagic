@@ -384,6 +384,6 @@ func run() error {
 func main() {
 	defer common.Cleanup()
 
-	common.New(&common.App{common.Title(), "1.0.0", "2019", common.Title(), "mpetavy", common.APACHE, "https://github.com/golang/mpetavy/golang/" + common.Title(), true, nil, nil, nil, run, time.Duration(0)}, []string{"f", "d"})
+	common.New(&common.App{common.Title(), "1.0.0", "2019", common.Title(), "mpetavy", common.APACHE, "https://github.com/golang/mpetavy/golang/" + common.Title(), false, nil, nil, nil, run, time.Duration(0)}, []string{"f", "d"})
 	common.Run()
 }
