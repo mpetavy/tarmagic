@@ -5,15 +5,13 @@ import (
 	"compress/gzip"
 	"flag"
 	"fmt"
+	"github.com/mpetavy/common"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
-
-	"github.com/mpetavy/common"
 )
 
 // tarmagic -f s:\Temp\Marcel\jdk-hotspot-11.0.4_11-mac.tar.gz -d d:\temp\jdk-hotspot-11.0.4_11-mac.tar.gz -o jdk-11.0.4+11
@@ -25,6 +23,8 @@ var (
 )
 
 func init() {
+	common.Init(common.Title(), "1.0.0", "2019", common.Title(), "mpetavy", common.APACHE, "https://github.com/golang/mpetavy/golang/"+common.Title(), false, nil, nil, run, 0)
+
 	filename = flag.String("f", "", "filename")
 	destination = flag.String("d", "", "destination directory or file")
 	offset = flag.String("o", "", "offset")
@@ -384,6 +384,5 @@ func run() error {
 func main() {
 	defer common.Cleanup()
 
-	common.New(&common.App{common.Title(), "1.0.0", "2019", common.Title(), "mpetavy", common.APACHE, "https://github.com/golang/mpetavy/golang/" + common.Title(), false, nil, nil, run, time.Duration(0)}, []string{"f", "d"})
-	common.Run()
+	common.Run([]string{"f", "d"})
 }
