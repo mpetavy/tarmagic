@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"flag"
 	"fmt"
-	"github.com/mpetavy/common"
 	"io"
 	"os"
 	"os/exec"
@@ -20,14 +19,16 @@ var (
 	filename    *string
 	destination *string
 	offset      *string
+	usage       *bool
+	debug       *bool
 )
 
 func init() {
-	common.Init(common.Title(), "1.0.0", "2019", common.Title(), "mpetavy", common.APACHE, "https://github.com/golang/mpetavy/golang/"+common.Title(), false, nil, nil, run, 0)
-
-	filename = flag.String("f", "", "filename")
-	destination = flag.String("d", "", "destination directory or file")
-	offset = flag.String("o", "", "offset")
+	filename = flag.String("f", "", "filename TAR/TAR.GZ file to read")
+	destination = flag.String("d", "", "directory or filename TAR/TAR.GZ file to write")
+	offset = flag.String("o", "", "directory offset to start reading from (optional)")
+	usage = flag.Bool("?", false, "show usage (optional)")
+	debug = flag.Bool("debug", false, "show debug information (optional)")
 }
 
 func gunzip(filename string) (string, error) {
@@ -36,12 +37,12 @@ func gunzip(filename string) (string, error) {
 		fmt.Printf("Gunzip of %s done\n", filename)
 	}()
 
-	tempFile, err := common.CreateTempFile()
+	tempFile, err := CreateTempFile()
 	if err != nil {
 		return "", err
 	}
 	defer func() {
-		common.DebugError(tempFile.Close())
+		DebugError(tempFile.Close())
 	}()
 
 	fileTAR, err := os.Create(tempFile.Name())
@@ -49,7 +50,7 @@ func gunzip(filename string) (string, error) {
 		return "", err
 	}
 	defer func() {
-		common.DebugError(fileTAR.Close())
+		DebugError(fileTAR.Close())
 	}()
 
 	fileGZ, err := os.Open(filename)
@@ -57,7 +58,7 @@ func gunzip(filename string) (string, error) {
 		return "", err
 	}
 	defer func() {
-		common.DebugError(fileGZ.Close())
+		DebugError(fileGZ.Close())
 	}()
 
 	zr, err := gzip.NewReader(fileGZ)
@@ -86,7 +87,7 @@ func gzipp(source string, dest string) error {
 		return err
 	}
 	defer func() {
-		common.DebugFunc(reader.Close())
+		DebugError(reader.Close())
 	}()
 
 	writer, err := os.Create(dest)
@@ -94,12 +95,12 @@ func gzipp(source string, dest string) error {
 		return err
 	}
 	defer func() {
-		common.DebugFunc(writer.Close())
+		DebugError(writer.Close())
 	}()
 
 	archiver := gzip.NewWriter(writer)
 	defer func() {
-		common.DebugFunc(archiver.Close())
+		DebugError(archiver.Close())
 	}()
 
 	archiver.Name = filepath.Base(dest)
@@ -118,7 +119,16 @@ func run() error {
 	var tarball *tar.Writer
 	var tarfilename string
 
-	if *offset != "" && !strings.HasSuffix(common.CleanPath(*offset), string(filepath.Separator)) {
+	b, err := FileExists(*filename)
+	if err != nil {
+		return err
+	}
+
+	if !b {
+		return fmt.Errorf("file not found: %s", *filename)
+	}
+
+	if *offset != "" && !strings.HasSuffix(CleanPath(*offset), string(filepath.Separator)) {
 		*offset = *offset + string(filepath.Separator)
 	}
 
@@ -132,7 +142,7 @@ func run() error {
 
 		tarball = tar.NewWriter(tarfile)
 	} else {
-		b, err := common.FileExists(*destination)
+		b, err := FileExists(*destination)
 		if err != nil {
 			return err
 		}
@@ -141,7 +151,7 @@ func run() error {
 			return fmt.Errorf("destination does not exist: %s", *destination)
 		}
 
-		b, err = common.IsDirectory(*destination)
+		b, err = IsDirectory(*destination)
 		if err != nil {
 			return err
 		}
@@ -169,7 +179,7 @@ func run() error {
 	}
 
 	defer func() {
-		common.DebugError(f.Close())
+		DebugError(f.Close())
 	}()
 
 	tr := tar.NewReader(f)
@@ -182,14 +192,9 @@ func run() error {
 			return err
 		}
 
-		if *offset == "" || (strings.HasPrefix(common.CleanPath(hdr.Name), common.CleanPath(*offset)) && len(hdr.Name) > len(*offset)) {
+		if *offset == "" || (strings.HasPrefix(CleanPath(hdr.Name), CleanPath(*offset)) && len(hdr.Name) > len(*offset)) {
 			if tarball != nil {
-				fmt.Printf("Copy entry %s\n", hdr.Name)
-
-				header, err := tar.FileInfoHeader(hdr.FileInfo(), hdr.Name)
-				if err != nil {
-					return err
-				}
+				header := hdr
 
 				header.Name = hdr.Name[len(*offset):]
 
@@ -199,6 +204,12 @@ func run() error {
 
 				if hdr.FileInfo().IsDir() {
 					continue
+				}
+
+				if header.Linkname != "" {
+					fmt.Printf("Copy entry %s [%s]\n", hdr.Name, hdr.Linkname)
+				} else {
+					fmt.Printf("Copy entry %s\n", hdr.Name)
 				}
 
 				_, err = io.Copy(tarball, tr)
@@ -211,14 +222,14 @@ func run() error {
 
 			dn := filepath.Join(*destination, hdr.Name[len(*offset):])
 
-			dn = common.CleanPath(dn)
+			dn = CleanPath(dn)
 			dir := filepath.Dir(dn)
 
 			if hdr.FileInfo().IsDir() {
 				dir = dn
 			}
 
-			b, err := common.FileExists(dir)
+			b, err := FileExists(dir)
 
 			if !b {
 				fmt.Printf("Create directory of %s [%s]\n", dn, hdr.Name)
@@ -248,14 +259,14 @@ func run() error {
 			}
 
 			defer func() {
-				common.DebugError(dnf.Close())
+				DebugError(dnf.Close())
 			}()
 
 			if _, err := io.Copy(dnf, tr); err != nil {
 				return err
 			}
 
-			common.DebugError(dnf.Close())
+			DebugError(dnf.Close())
 		}
 	}
 
@@ -281,7 +292,7 @@ func run() error {
 
 			fmt.Printf("Create link %s [%s]\n", dn, ln)
 
-			targetExists, err := common.FileExists(target)
+			targetExists, err := FileExists(target)
 			if err != nil {
 				return err
 			}
@@ -289,7 +300,7 @@ func run() error {
 			if !targetExists {
 				targetDir := filepath.Dir(target)
 
-				b, err := common.FileExists(targetDir)
+				b, err := FileExists(targetDir)
 
 				if !b {
 					err = os.MkdirAll(targetDir, os.ModePerm)
@@ -302,15 +313,15 @@ func run() error {
 				if err != nil {
 					return err
 				}
-				common.DebugError(f.Close())
+				DebugError(f.Close())
 			}
 
-			targetIsDir, err := common.IsDirectory(target)
+			targetIsDir, err := IsDirectory(target)
 			if err != nil {
 				return err
 			}
 
-			b, err := common.FileExists(filepath.Base(dn))
+			b, err := FileExists(filepath.Base(dn))
 			if err != nil {
 				return err
 			}
@@ -322,7 +333,7 @@ func run() error {
 				}
 			}
 
-			if common.IsWindowsOS() {
+			if IsWindowsOS() {
 				if targetIsDir {
 					cmd := exec.Command("cmd.exe", "/c", "mklink", "/d", filepath.Base(dn), ln)
 
@@ -333,7 +344,7 @@ func run() error {
 					err = cmd.Run()
 				}
 			} else {
-				err = os.Symlink(filepath.Base(dn), ln)
+				err = os.Symlink(ln, filepath.Base(dn))
 			}
 			if err != nil {
 				return err
@@ -355,8 +366,8 @@ func run() error {
 		return nil
 	}
 
-	common.DebugFunc(tarball.Close())
-	common.DebugFunc(tarfile.Close())
+	DebugError(tarball.Close())
+	DebugError(tarfile.Close())
 
 	if strings.HasSuffix(*destination, ".gz") {
 		err = gzipp(tarfilename, *destination)
@@ -382,7 +393,17 @@ func run() error {
 }
 
 func main() {
-	defer common.Done()
+	flag.Parse()
 
-	common.Run([]string{"f", "d"})
+	fmt.Printf("\nTARMAGIC v.1.2 - tool to work with TAR or TAR.GZ files\n\n")
+
+	if *filename == "" || *destination == "" || *usage {
+		flag.Usage()
+		os.Exit(0)
+	}
+
+	err := run()
+	if err != nil {
+		fmt.Printf("%s\n", err.Error())
+	}
 }
