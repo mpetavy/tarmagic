@@ -28,7 +28,7 @@ func Debug(v ...interface{}) {
 	}
 }
 
-func DebugError(err error) {
+func WarnError(err error) {
 	if *debug {
 		if err != nil {
 			log.Printf("ERROR %s", err.Error())
@@ -41,7 +41,7 @@ func CreateTempFile() (file *os.File, err error) {
 	if err != nil {
 		return nil, err
 	}
-	defer DebugError(file.Close())
+	defer WarnError(file.Close())
 
 	Debug(fmt.Sprintf("CreateTempFile : %s", file.Name()))
 
