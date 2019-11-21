@@ -42,7 +42,7 @@ func gunzip(filename string) (string, error) {
 		return "", err
 	}
 	defer func() {
-		DebugError(tempFile.Close())
+		WarnError(tempFile.Close())
 	}()
 
 	fileTAR, err := os.Create(tempFile.Name())
@@ -50,7 +50,7 @@ func gunzip(filename string) (string, error) {
 		return "", err
 	}
 	defer func() {
-		DebugError(fileTAR.Close())
+		WarnError(fileTAR.Close())
 	}()
 
 	fileGZ, err := os.Open(filename)
@@ -58,7 +58,7 @@ func gunzip(filename string) (string, error) {
 		return "", err
 	}
 	defer func() {
-		DebugError(fileGZ.Close())
+		WarnError(fileGZ.Close())
 	}()
 
 	zr, err := gzip.NewReader(fileGZ)
@@ -87,7 +87,7 @@ func gzipp(source string, dest string) error {
 		return err
 	}
 	defer func() {
-		DebugError(reader.Close())
+		WarnError(reader.Close())
 	}()
 
 	writer, err := os.Create(dest)
@@ -95,12 +95,12 @@ func gzipp(source string, dest string) error {
 		return err
 	}
 	defer func() {
-		DebugError(writer.Close())
+		WarnError(writer.Close())
 	}()
 
 	archiver := gzip.NewWriter(writer)
 	defer func() {
-		DebugError(archiver.Close())
+		WarnError(archiver.Close())
 	}()
 
 	archiver.Name = filepath.Base(dest)
@@ -179,7 +179,7 @@ func run() error {
 	}
 
 	defer func() {
-		DebugError(f.Close())
+		WarnError(f.Close())
 	}()
 
 	tr := tar.NewReader(f)
@@ -259,14 +259,14 @@ func run() error {
 			}
 
 			defer func() {
-				DebugError(dnf.Close())
+				WarnError(dnf.Close())
 			}()
 
 			if _, err := io.Copy(dnf, tr); err != nil {
 				return err
 			}
 
-			DebugError(dnf.Close())
+			WarnError(dnf.Close())
 		}
 	}
 
@@ -313,7 +313,7 @@ func run() error {
 				if err != nil {
 					return err
 				}
-				DebugError(f.Close())
+				WarnError(f.Close())
 			}
 
 			targetIsDir, err := IsDirectory(target)
@@ -366,8 +366,8 @@ func run() error {
 		return nil
 	}
 
-	DebugError(tarball.Close())
-	DebugError(tarfile.Close())
+	WarnError(tarball.Close())
+	WarnError(tarfile.Close())
 
 	if strings.HasSuffix(*destination, ".gz") {
 		err = gzipp(tarfilename, *destination)
