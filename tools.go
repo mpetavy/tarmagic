@@ -28,7 +28,7 @@ func Debug(v ...interface{}) {
 	}
 }
 
-func WarnError(err error) {
+func Error(err error) {
 	if *debug {
 		if err != nil {
 			log.Printf("ERROR %s", err.Error())
@@ -41,47 +41,17 @@ func CreateTempFile() (file *os.File, err error) {
 	if err != nil {
 		return nil, err
 	}
-	defer WarnError(file.Close())
+	defer Error(file.Close())
 
 	Debug(fmt.Sprintf("CreateTempFile : %s", file.Name()))
 
 	return file, err
 }
 
-// CreateTempDir creates a temporary file
-func CreateTempDir() (string, error) {
-	tempdir, err := ioutil.TempDir("", "tarmagic-*")
-	if err != nil {
-		return "", err
-	}
-
-	Debug(fmt.Sprintf("CreateTempDir : %s", tempdir))
-
-	return tempdir, err
-}
-
 func IsWindowsOS() bool {
 	result := runtime.GOOS == "windows"
 
 	return result
-}
-
-func Executable() string {
-	path, err := os.Executable()
-	if err != nil {
-		path = os.Args[0]
-	}
-
-	isMain := strings.Index(filepath.Base(path), "main") != -1
-
-	if isMain {
-		wd, err := os.Getwd()
-		if err == nil {
-			path = filepath.Join(wd, filepath.Base(wd)+filepath.Ext(path))
-		}
-	}
-
-	return path
 }
 
 func CleanPath(path string) string {
