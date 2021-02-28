@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
@@ -37,7 +36,7 @@ func Error(err error) {
 }
 
 func CreateTempFile() (file *os.File, err error) {
-	file, err = ioutil.TempFile("", "tarmagic-*")
+	file, err = os.CreateTemp("", "tarmagic-*")
 	if err != nil {
 		return nil, err
 	}
