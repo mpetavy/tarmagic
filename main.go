@@ -333,7 +333,7 @@ func run() error {
 				}
 			}
 
-			if IsWindowsOS() {
+			if IsWindows() {
 				if targetIsDir {
 					cmd := exec.Command("cmd.exe", "/c", "mklink", "/d", filepath.Base(dn), ln)
 

@@ -47,14 +47,14 @@ func CreateTempFile() (file *os.File, err error) {
 	return file, err
 }
 
-func IsWindowsOS() bool {
+func IsWindows() bool {
 	result := runtime.GOOS == "windows"
 
 	return result
 }
 
 func CleanPath(path string) string {
-	if IsWindowsOS() {
+	if IsWindows() {
 		path = strings.Replace(path, "/", string(filepath.Separator), -1)
 	} else {
 		path = strings.Replace(path, "\\", string(filepath.Separator), -1)
