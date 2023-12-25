@@ -1,4 +1,4 @@
-module tarmagic
+module github.com/mpetavy/tarmagic
 
 go 1.21
 
